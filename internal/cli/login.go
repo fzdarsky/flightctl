@@ -245,27 +245,26 @@ func (o *LoginOptions) Complete(cmd *cobra.Command, args []string) error {
 	if o.ConfigFilePath != defaultConfigPath {
 		fmt.Printf("Using a non-default configuration file path: %s (Default: %s)\n", o.ConfigFilePath, defaultConfigPath)
 	}
+
+	// Prepend https scheme if not present
+	if len(args) > 0 && args[0] != "" && !strings.Contains(args[0], "://") {
+		args[0] = "https://" + args[0]
+	}
+
 	return nil
 }
 
 func (o *LoginOptions) Init(args []string) error {
 	var err error
 	trimmedURL := strings.TrimSpace(args[0])
-	serverURL := ensureURLScheme(trimmedURL)
-	o.clientConfig, err = o.getClientConfig(serverURL)
+	o.clientConfig, err = o.getClientConfig(trimmedURL)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// ensureURLScheme ensures that the given server URL has a scheme. If not, it defaults to https.
-func ensureURLScheme(serverURL string) string {
-	if serverURL != "" && !strings.HasPrefix(serverURL, "http://") && !strings.HasPrefix(serverURL, "https://") {
-		return "https://" + serverURL
-	}
-	return serverURL
-}
+
 
 
 // validateShowProvidersExclusion ensures --show-providers is not used with other login options

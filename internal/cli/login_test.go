@@ -3,97 +3,70 @@ package cli
 import (
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
 
-func TestEnsureURLScheme(t *testing.T) {
+func TestLoginOptions_Complete_URLScheme(t *testing.T) {
 	testCases := []struct {
 		name     string
-		input    string
+		args     []string
 		expected string
 	}{
 		{
 			name:     "hostname only",
-			input:    "example.com",
+			args:     []string{"example.com"},
 			expected: "https://example.com",
 		},
 		{
 			name:     "hostname with port",
-			input:    "example.com:8080",
+			args:     []string{"example.com:8080"},
 			expected: "https://example.com:8080",
 		},
 		{
 			name:     "https scheme present",
-			input:    "https://example.com",
+			args:     []string{"https://example.com"},
 			expected: "https://example.com",
 		},
 		{
 			name:     "http scheme present",
-			input:    "http://example.com",
+			args:     []string{"http://example.com"},
 			expected: "http://example.com",
 		},
 		{
-			name:     "empty string",
-			input:    "",
+			name:     "random scheme present",
+			args:     []string{"ftp://example.com"},
+			expected: "ftp://example.com",
+		},
+		{
+			name:     "empty arg",
+			args:     []string{""},
 			expected: "",
 		},
 		{
 			name:     "localhost",
-			input:    "localhost:8000",
+			args:     []string{"localhost:8000"},
 			expected: "https://localhost:8000",
+		},
+		{
+			name:     "no args",
+			args:     []string{},
+			expected: "", // No change expected, no error should occur
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			actual := ensureURLScheme(tc.input)
-			require.Equal(t, tc.expected, actual)
-		})
-	}
-}
+			o := DefaultLoginOptions()
+			cmd := &cobra.Command{}
+			o.Bind(cmd.Flags())
 
-func TestEnsureURLSchemeAgain(t *testing.T) {
-	testCases := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "hostname only",
-			input:    "example.com",
-			expected: "https://example.com",
-		},
-		{
-			name:     "hostname with port",
-			input:    "example.com:8080",
-			expected: "https://example.com:8080",
-		},
-		{
-			name:     "https scheme present",
-			input:    "https://example.com",
-			expected: "https://example.com",
-		},
-		{
-			name:     "http scheme present",
-			input:    "http://example.com",
-			expected: "http://example.com",
-		},
-		{
-			name:     "empty string",
-			input:    "",
-			expected: "",
-		},
-		{
-			name:     "localhost",
-			input:    "localhost:8000",
-			expected: "https://localhost:8000",
-		},
-	}
+			err := o.Complete(cmd, tc.args)
+			require.NoError(t, err)
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			actual := ensureURLScheme(tc.input)
-			require.Equal(t, tc.expected, actual)
+			if len(tc.args) > 0 {
+				require.Equal(t, tc.expected, tc.args[0])
+			}
 		})
 	}
 }
